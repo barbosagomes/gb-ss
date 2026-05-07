@@ -10,7 +10,7 @@ import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
 import webhookRouter from "../webhooks";
-
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0"; // Apenas para teste, se o problema for SSL
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
     const server = net.createServer();
