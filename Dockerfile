@@ -3,26 +3,34 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-# Copiar package.json e package-lock.json
-COPY package*.json ./
+# Instalar pnpm
+RUN npm install -g pnpm
+
+# Copiar package.json, pnpm-lock.yaml e .npmrc
+COPY package.json pnpm-lock.yaml ./
 
 # Instalar dependências
-RUN npm ci
+RUN pnpm install --frozen-lockfile
 
 # Copiar código-fonte
 COPY . .
 
 # Build da aplicação
-RUN npm run build
+RUN pnpm run build
 
 # Production stage
 FROM node:20-alpine
 
 WORKDIR /app
 
+# Instalar pnpm
+RUN npm install -g pnpm
+
+# Copiar package.json e pnpm-lock.yaml
+COPY package.json pnpm-lock.yaml ./
+
 # Instalar apenas dependências de produção
-COPY package*.json ./
-RUN npm ci --only=production
+RUN pnpm install --frozen-lockfile --prod
 
 # Copiar arquivos built do stage anterior
 COPY --from=builder /app/dist ./dist
