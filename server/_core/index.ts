@@ -62,7 +62,7 @@ async function startServer() {
     // Rota catch-all para corrigir o erro 404 e permitir navegação SPA
     app.get("*", (req, res) => {
       if (!req.path.startsWith('/api')) {
-        res.sendFile(path.resolve("dist/client/index.html"));
+        res.sendFile(path.resolve("dist/public/index.html"));
       }
     });
   }
