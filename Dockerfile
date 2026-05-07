@@ -18,8 +18,11 @@ RUN pnpm install --frozen-lockfile
 # Copy all source files
 COPY . .
 
-# Try to build, but show errors
-RUN pnpm run build 2>&1 || true
+# Build the application
+RUN pnpm run build
+
+# Verify build output
+RUN ls -la dist/ || echo 'dist directory not found'
 
 # Expose port
 EXPOSE 3000
