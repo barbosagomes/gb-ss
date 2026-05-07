@@ -12,6 +12,7 @@ function getQueryParam(req: Request, key: string): string | undefined {
 }
 
 async function handleGitHubCallback(req: Request, res: Response) {
+  console.log("RAW CALLBACK HIT:", req.url, req.query);
   const code = getQueryParam(req, "code");
   const state = getQueryParam(req, "state");
 
