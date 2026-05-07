@@ -34,8 +34,20 @@ async function startServer() {
   const app = express();
   const server = createServer(app);
 
+  app.set('trust proxy', 1);
+
   app.use(express.json({ limit: "50mb" }));
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
+
+  // Forçar HTTPS em produção
+  if (process.env.NODE_ENV === "production") {
+    app.use((req, res, next) => {
+      if (req.headers["x-forwarded-proto"] !== "https") {
+        return res.redirect(`https://${req.get("host")}${req.url}`);
+      }
+      next();
+    });
+  }
 
   // 1. ROTAS DE API E AUTH (Prioridade Máxima)
   // Registra as rotas de login antes de qualquer arquivo estático

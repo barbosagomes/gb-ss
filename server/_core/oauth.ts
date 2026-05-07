@@ -101,7 +101,7 @@ async function handleGoogleCallback(req: Request, res: Response) {
         client_secret: ENV.googleClientSecret,
         code,
         grant_type: "authorization_code",
-        redirect_uri: `${req.protocol}://${req.get("host")}/api/oauth/google/callback`,
+        redirect_uri: `https://${req.get("host")}/api/oauth/google/callback`,
       }
     );
 
@@ -190,17 +190,20 @@ async function handleTikTokCallback(req: Request, res: Response) {
   }
 }
 
+const GITHUB_REDIRECT_URI = "https://gb-ss-production.up.railway.app/api/oauth/github/callback";
+
 export function registerOAuthRoutes(app: Express) {
   // Rotas que iniciam o login (Essenciais para destravar o botão)
   app.get("/api/oauth/github", (req, res) => {
-    const redirectUri = `${req.protocol}://${req.get("host")}/api/oauth/github/callback`;
+    // Hardcode total para evitar qualquer erro de redirecionamento HTTP
+    const redirectUri = GITHUB_REDIRECT_URI;
     const state = Buffer.from(redirectUri).toString("base64");
     const url = `https://github.com/login/oauth/authorize?client_id=${ENV.githubClientId}&redirect_uri=${encodeURIComponent(redirectUri)}&state=${state}&scope=user:email`;
     res.redirect(url);
   });
 
   app.get("/api/oauth/google", (req, res) => {
-    const redirectUri = `${req.protocol}://${req.get("host")}/api/oauth/google/callback`;
+    const redirectUri = `https://${req.get("host")}/api/oauth/google/callback`;
     const state = Buffer.from(redirectUri).toString("base64");
     const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${ENV.googleClientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=openid%20profile%20email&state=${state}`;
     res.redirect(url);
