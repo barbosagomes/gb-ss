@@ -3,6 +3,7 @@ import type { Express, Request, Response } from "express";
 import * as db from "../db";
 import { getSessionCookieOptions } from "./cookies";
 import { sdk } from "./sdk";
+import { ENV } from "./env";
 import axios from "axios";
 
 function getQueryParam(req: Request, key: string): string | undefined {
@@ -32,8 +33,8 @@ async function handleGitHubCallback(req: Request, res: Response) {
     const tokenResponse = await axios.post(
       "https://github.com/login/oauth/access_token",
       {
-        client_id: process.env.GITHUB_CLIENT_ID,
-        client_secret: process.env.GITHUB_CLIENT_SECRET,
+        client_id: ENV.githubClientId,
+        client_secret: ENV.githubClientSecret,
         code,
       },
       {
@@ -110,8 +111,8 @@ async function handleGoogleCallback(req: Request, res: Response) {
     const tokenResponse = await axios.post(
       "https://oauth2.googleapis.com/token",
       {
-        client_id: process.env.GOOGLE_CLIENT_ID,
-        client_secret: process.env.GOOGLE_CLIENT_SECRET,
+        client_id: ENV.googleClientId,
+        client_secret: ENV.googleClientSecret,
         code,
         grant_type: "authorization_code",
         redirect_uri: `${req.protocol}://${req.get("host")}/api/oauth/google/callback`,
