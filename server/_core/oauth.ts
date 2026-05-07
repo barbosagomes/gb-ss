@@ -23,17 +23,31 @@ async function handleGitHubCallback(req: Request, res: Response) {
   try {
     const redirectUrl = Buffer.from(state, "base64").toString("utf-8");
 
+    console.log("EXCHANGE REQUEST:", {
+      client_id: ENV.githubClientId,
+      client_secret: ENV.githubClientSecret?.slice(0, 4) + "...",
+      code,
+      redirect_uri: GITHUB_REDIRECT_URI
+    });
+
     const tokenResponse = await axios.post(
       "https://github.com/login/oauth/access_token",
       {
         client_id: ENV.githubClientId,
         client_secret: ENV.githubClientSecret,
         code,
+        redirect_uri: GITHUB_REDIRECT_URI,
       },
       {
-        headers: { Accept: "application/json" },
+        headers: { 
+          "Accept": "application/json",
+          "Content-Type": "application/json"
+        },
       }
     );
+
+    console.log("EXCHANGE RESPONSE STATUS:", tokenResponse.status);
+    console.log("EXCHANGE RESPONSE BODY:", tokenResponse.data);
 
     if (tokenResponse.data.error) {
       throw new Error(`GitHub OAuth error: ${tokenResponse.data.error_description}`);
