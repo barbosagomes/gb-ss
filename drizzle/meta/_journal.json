@@ -1,0 +1,27 @@
+{
+  "version": "7",
+  "dialect": "mysql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "5",
+      "when": 1778089124400,
+      "tag": "0000_fearless_paladin",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "5",
+      "when": 1778090137825,
+      "tag": "0001_mixed_synch",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1778092345292,
+      "tag": "0002_young_ego",
+      "breakpoints": true
+    }
+  ]
+}
