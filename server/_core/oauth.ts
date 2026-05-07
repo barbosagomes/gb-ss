@@ -162,9 +162,65 @@ async function handleGoogleCallback(req: Request, res: Response) {
   }
 }
 
+async function handleTikTokCallback(req: Request, res: Response) {
+  const code = getQueryParam(req, "code");
+  const state = getQueryParam(req, "state");
+
+  if (!code) {
+    res.status(400).json({ error: "code is required" });
+    return;
+  }
+
+  try {
+    console.log("[OAuth TikTok] Received code:", code);
+    // State contains userId encoded in base64
+    let userId: number | null = null;
+    if (state) {
+      try {
+        const decoded = JSON.parse(Buffer.from(state, "base64").toString("utf-8"));
+        userId = decoded.userId;
+      } catch (e) {
+        console.error("[OAuth TikTok] Failed to decode state:", e);
+      }
+    }
+
+    // Exchange code for token using TikTok API
+    const { createTiktokClient } = await import("../tiktok-api");
+    const client = createTiktokClient({
+      appKey: ENV.tiktokAppKey,
+      appSecret: ENV.tiktokAppSecret,
+      redirectUrl: ENV.tiktokRedirectUrl,
+      isSandbox: false,
+    });
+
+    const tokenResponse = await client.exchangeCodeForToken(code);
+    console.log("[OAuth TikTok] Token received for seller:", tokenResponse.seller_id);
+
+    if (userId) {
+      const { upsertAccessToken } = await import("../db-tiktok");
+      const expiresAt = new Date(Date.now() + tokenResponse.expires_in * 1000);
+      await upsertAccessToken({
+        userId,
+        accessToken: tokenResponse.access_token,
+        refreshToken: tokenResponse.refresh_token,
+        expiresAt,
+        sellerId: tokenResponse.seller_id,
+        shopName: tokenResponse.shop_name,
+      });
+    }
+
+    // Redirect to settings page with success
+    res.redirect(302, "/settings?tiktok=connected");
+  } catch (error) {
+    console.error("[OAuth TikTok] Callback failed:", error instanceof Error ? error.message : String(error));
+    res.redirect(302, "/settings?tiktok=error");
+  }
+}
+
 export function registerOAuthRoutes(app: Express) {
   app.get("/api/oauth/github/callback", handleGitHubCallback);
   app.get("/api/oauth/google/callback", handleGoogleCallback);
+  app.get("/api/oauth/tiktok/callback", handleTikTokCallback);
 
   app.get("/api/oauth/callback", async (req: Request, res: Response) => {
     const code = getQueryParam(req, "code");

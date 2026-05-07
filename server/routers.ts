@@ -6,6 +6,7 @@ import { z } from "zod";
 import * as dbTiktok from "./db-tiktok";
 import { createTiktokClient } from "./tiktok-api";
 import { financialRouter } from "./routers-financial";
+import { ENV } from "./_core/env";
 
 export const appRouter = router({
   system: systemRouter,
@@ -23,66 +24,55 @@ export const appRouter = router({
   financial: financialRouter,
 
   tiktok: router({
-    // Get all products
+    // Get all products from DB (synced from TikTok)
     getProducts: protectedProcedure
       .query(async ({ ctx }) => {
-        // Mock data - em produção, isso viria da API do TikTok Shop
-        const mockProducts = [
-          {
-            id: "prod_1",
-            name: "Camiseta Premium",
-            skuCount: 3,
-            totalStock: 150,
-            price: 79.9,
-            image: "https://via.placeholder.com/100",
-          },
-          {
-            id: "prod_2",
-            name: "Calça Jeans",
-            skuCount: 5,
-            totalStock: 85,
-            price: 129.9,
-            image: "https://via.placeholder.com/100",
-          },
-          {
-            id: "prod_3",
-            name: "Jaqueta Inverno",
-            skuCount: 2,
-            totalStock: 45,
-            price: 199.9,
-            image: "https://via.placeholder.com/100",
-          },
-          {
-            id: "prod_4",
-            name: "Tênis Esportivo",
-            skuCount: 4,
-            totalStock: 200,
-            price: 249.9,
-            image: "https://via.placeholder.com/100",
-          },
-          {
-            id: "prod_5",
-            name: "Bolsa Casual",
-            skuCount: 1,
-            totalStock: 8,
-            price: 89.9,
-            image: "https://via.placeholder.com/100",
-          },
-        ];
-
-        return mockProducts;
+        const products = await dbTiktok.getProductsByUserId(ctx.user.id);
+        if (products.length === 0) {
+          return [];
+        }
+        // Enrich with SKU counts
+        const enriched = await Promise.all(
+          products.map(async (p) => {
+            const skuList = await dbTiktok.getSkusByProductId(p.id);
+            const totalStock = skuList.reduce((sum, s) => sum + (s.availableQuantity || 0), 0);
+            return {
+              id: p.id,
+              tiktokProductId: p.tiktokProductId,
+              productName: p.productName,
+              description: p.description,
+              status: p.status,
+              skuCount: skuList.length,
+              totalStock,
+              createdAt: p.createdAt,
+              updatedAt: p.updatedAt,
+            };
+          })
+        );
+        return enriched;
       }),
 
-    // Get or create TikTok app configuration
+    // Get or create TikTok app configuration (uses ENV defaults)
     getAppConfig: protectedProcedure.query(async ({ ctx }) => {
       const config = await dbTiktok.getTiktokAppByUserId(ctx.user.id);
-      return config
-        ? {
-            appKey: config.appKey,
-            redirectUrl: config.redirectUrl,
-            isSandbox: config.isSandbox === 1,
-          }
-        : null;
+      if (config) {
+        return {
+          appKey: config.appKey,
+          redirectUrl: config.redirectUrl,
+          isSandbox: config.isSandbox === 1,
+          isConfigured: true,
+        };
+      }
+      // Return ENV defaults if no per-user config exists
+      if (ENV.tiktokAppKey) {
+        return {
+          appKey: ENV.tiktokAppKey,
+          redirectUrl: ENV.tiktokRedirectUrl,
+          isSandbox: false,
+          isConfigured: true,
+        };
+      }
+      return null;
     }),
 
     // Save TikTok app configuration
@@ -105,18 +95,24 @@ export const appRouter = router({
         return { success: true };
       }),
 
-    // Get OAuth authorization URL
+    // Get OAuth authorization URL (uses ENV credentials by default)
     getAuthorizationUrl: protectedProcedure.query(async ({ ctx }) => {
+      // Try per-user config first, fall back to ENV
       const config = await dbTiktok.getTiktokAppByUserId(ctx.user.id);
-      if (!config) {
-        throw new Error("TikTok app configuration not found");
+      const appKey = config?.appKey || ENV.tiktokAppKey;
+      const appSecret = config?.appSecret || ENV.tiktokAppSecret;
+      const redirectUrl = config?.redirectUrl || ENV.tiktokRedirectUrl;
+      const isSandbox = config ? config.isSandbox === 1 : false;
+
+      if (!appKey || !appSecret) {
+        throw new Error("TikTok app credentials not configured");
       }
 
       const client = createTiktokClient({
-        appKey: config.appKey,
-        appSecret: config.appSecret,
-        redirectUrl: config.redirectUrl || "",
-        isSandbox: config.isSandbox === 1,
+        appKey,
+        appSecret,
+        redirectUrl,
+        isSandbox,
       });
 
       const state = Buffer.from(JSON.stringify({ userId: ctx.user.id })).toString("base64");
@@ -125,7 +121,7 @@ export const appRouter = router({
       return { url };
     }),
 
-    // Handle OAuth callback
+    // Handle OAuth callback (uses ENV credentials by default)
     handleOAuthCallback: protectedProcedure
       .input(
         z.object({
@@ -135,15 +131,20 @@ export const appRouter = router({
       )
       .mutation(async ({ ctx, input }) => {
         const config = await dbTiktok.getTiktokAppByUserId(ctx.user.id);
-        if (!config) {
-          throw new Error("TikTok app configuration not found");
+        const appKey = config?.appKey || ENV.tiktokAppKey;
+        const appSecret = config?.appSecret || ENV.tiktokAppSecret;
+        const redirectUrl = config?.redirectUrl || ENV.tiktokRedirectUrl;
+        const isSandbox = config ? config.isSandbox === 1 : false;
+
+        if (!appKey || !appSecret) {
+          throw new Error("TikTok app credentials not configured");
         }
 
         const client = createTiktokClient({
-          appKey: config.appKey,
-          appSecret: config.appSecret,
-          redirectUrl: config.redirectUrl || "",
-          isSandbox: config.isSandbox === 1,
+          appKey,
+          appSecret,
+          redirectUrl,
+          isSandbox,
         });
 
         const tokenResponse = await client.exchangeCodeForToken(input.code);
@@ -206,15 +207,20 @@ export const appRouter = router({
       const config = await dbTiktok.getTiktokAppByUserId(ctx.user.id);
       const token = await dbTiktok.getAccessTokenByUserId(ctx.user.id);
 
-      if (!config || !token) {
-        throw new Error("TikTok configuration or token not found");
+      if (!token) {
+        throw new Error("TikTok not connected. Please authorize first.");
       }
 
+      const appKey = config?.appKey || ENV.tiktokAppKey;
+      const appSecret = config?.appSecret || ENV.tiktokAppSecret;
+      const redirectUrl = config?.redirectUrl || ENV.tiktokRedirectUrl;
+      const isSandbox = config ? config.isSandbox === 1 : false;
+
       const client = createTiktokClient({
-        appKey: config.appKey,
-        appSecret: config.appSecret,
-        redirectUrl: config.redirectUrl || "",
-        isSandbox: config.isSandbox === 1,
+        appKey,
+        appSecret,
+        redirectUrl,
+        isSandbox,
       });
 
       try {
@@ -267,15 +273,20 @@ export const appRouter = router({
         const config = await dbTiktok.getTiktokAppByUserId(ctx.user.id);
         const token = await dbTiktok.getAccessTokenByUserId(ctx.user.id);
 
-        if (!config || !token) {
-          throw new Error("TikTok configuration or token not found");
+        if (!token) {
+          throw new Error("TikTok not connected. Please authorize first.");
         }
 
+        const appKey = config?.appKey || ENV.tiktokAppKey;
+        const appSecret = config?.appSecret || ENV.tiktokAppSecret;
+        const redirectUrl = config?.redirectUrl || ENV.tiktokRedirectUrl;
+        const isSandbox = config ? config.isSandbox === 1 : false;
+
         const client = createTiktokClient({
-          appKey: config.appKey,
-          appSecret: config.appSecret,
-          redirectUrl: config.redirectUrl || "",
-          isSandbox: config.isSandbox === 1,
+          appKey,
+          appSecret,
+          redirectUrl,
+          isSandbox,
         });
 
         try {
