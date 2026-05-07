@@ -34,17 +34,14 @@ async function startServer() {
   const app = express();
   const server = createServer(app);
 
-  // Configuração do body parser
   app.use(express.json({ limit: "50mb" }));
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
+  // 1. ROTAS DE API E AUTH (Prioridade Máxima)
   registerStorageProxy(app);
   registerOAuthRoutes(app);
-
-  // Rotas de Webhook
   app.use("/api/webhooks/tiktok", webhookRouter);
-
-  // tRPC API
+  
   app.use(
     "/api/trpc",
     createExpressMiddleware({
@@ -53,26 +50,16 @@ async function startServer() {
     })
   );
 
-  // Modo desenvolvimento usa Vite, produção usa arquivos estáticos
+  // 2. ARQUIVOS ESTÁTICOS E INTERFACE
   if (process.env.NODE_ENV === "development") {
     await setupVite(app, server);
   } else {
+    // Aqui garantimos que o serveStatic não "atropele" as rotas de API
     serveStatic(app);
-    
-    // Rota catch-all para corrigir o erro 404 e permitir navegação SPA
-    app.get("*", (req, res) => {
-      if (!req.path.startsWith('/api')) {
-        res.sendFile(path.resolve("dist/public/index.html"));
-      }
-    });
   }
 
   const preferredPort = parseInt(process.env.PORT || "3000");
   const port = await findAvailablePort(preferredPort);
-
-  if (port !== preferredPort) {
-    console.log(`Port ${preferredPort} is busy, using port ${port} instead`);
-  }
 
   server.listen(port, () => {
     console.log(`Server running on http://localhost:${port}/`);
