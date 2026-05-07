@@ -3,20 +3,19 @@ FROM node:20 AS builder
 
 WORKDIR /app
 
-# Instalar pnpm globalmente
+# Install pnpm
 RUN npm install -g pnpm@10.4.1
 
-# Copiar package.json e pnpm-lock.yaml
-COPY package.json ./
-COPY pnpm-lock.yaml ./
+# Copy package files
+COPY package.json pnpm-lock.yaml ./
 
-# Instalar dependências
+# Install dependencies with pnpm
 RUN pnpm install --frozen-lockfile
 
-# Copiar código-fonte
+# Copy source code
 COPY . .
 
-# Build da aplicação
+# Build the application
 RUN pnpm run build
 
 # Production stage
@@ -24,30 +23,29 @@ FROM node:20-alpine
 
 WORKDIR /app
 
-# Instalar pnpm
+# Install pnpm in production image
 RUN npm install -g pnpm@10.4.1
 
-# Copiar package.json e pnpm-lock.yaml
-COPY package.json ./
-COPY pnpm-lock.yaml ./
+# Copy package files
+COPY package.json pnpm-lock.yaml ./
 
-# Instalar apenas dependências de produção
+# Install production dependencies only
 RUN pnpm install --frozen-lockfile --prod
 
-# Copiar arquivos built do stage anterior
+# Copy built artifacts from builder
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/client/dist ./client/dist
 
-# Copiar script de inicialização
+# Copy startup script
 COPY start.sh ./start.sh
 RUN chmod +x ./start.sh
 
-# Expor porta
+# Expose port
 EXPOSE 3000
 
-# Variáveis de ambiente padrão
+# Set environment variables
 ENV NODE_ENV=production
 ENV PORT=3000
 
-# Iniciar aplicação usando o script
+# Start application
 CMD ["./start.sh"]
