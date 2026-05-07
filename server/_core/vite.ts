@@ -22,22 +22,11 @@ export async function setupVite(app: Express, server: Server) {
 
   app.use(vite.middlewares);
   app.use("*", async (req, res, next) => {
-    const url = req.originalUrl;
-
     try {
-      const clientTemplate = path.resolve(
-        import.meta.dirname,
-        "../..",
-        "client",
-        "index.html"
-      );
-
+      const clientTemplate = path.resolve(process.cwd(), "client", "index.html");
       let template = await fs.promises.readFile(clientTemplate, "utf-8");
-      template = template.replace(
-        `src="/src/main.tsx"`,
-        `src="/src/main.tsx?v=${nanoid()}"`
-      );
-      const page = await vite.transformIndexHtml(url, template);
+      template = template.replace(`src="/src/main.tsx"`, `src="/src/main.tsx?v=${nanoid()}"`);
+      const page = await vite.transformIndexHtml(req.originalUrl, template);
       res.status(200).set({ "Content-Type": "text/html" }).end(page);
     } catch (e) {
       vite.ssrFixStacktrace(e as Error);
@@ -47,23 +36,23 @@ export async function setupVite(app: Express, server: Server) {
 }
 
 export function serveStatic(app: Express) {
-  // Ajustado para dist/public conforme os logs de build do projeto
-  const distPath = path.resolve(import.meta.dirname, "../..", "dist", "public");
+  // process.cwd() pega a raiz do projeto no Railway, o ponto mais seguro.
+  const distPath = path.resolve(process.cwd(), "dist", "public");
 
   if (!fs.existsSync(distPath)) {
-    console.error(
-      `Diretório de build não encontrado: ${distPath}, certifique-se de buildar o client primeiro`
-    );
+    console.error(`ERRO CRÍTICO: Pasta de build não encontrada em: ${distPath}`);
   }
 
-  // Serve arquivos estáticos (CSS, JS, Imagens)
   app.use(express.static(distPath));
 
-  // Fallback para index.html: permite que rotas como /login ou /settings funcionem sem 404
-  app.use("*", (req, res) => {
-    // Evita loop infinito em chamadas de API que não existem
+  app.get("*", (req, res) => {
     if (!req.path.startsWith('/api')) {
-      res.sendFile(path.resolve(distPath, "index.html"));
+      const indexPath = path.resolve(distPath, "index.html");
+      if (fs.existsSync(indexPath)) {
+        res.sendFile(indexPath);
+      } else {
+        res.status(404).send("O arquivo index.html não foi encontrado no build.");
+      }
     }
   });
 }
