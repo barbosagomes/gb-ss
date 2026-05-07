@@ -3,13 +3,17 @@ import express from "express";
 import { createServer } from "http";
 import net from "net";
 import path from "path";
+import { fileURLToPath } from "url";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { registerOAuthRoutes } from "./oauth";
 import { registerStorageProxy } from "./storageProxy";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
-import { serveStatic, setupVite } from "./vite";
+import { setupVite } from "./vite";
 import webhookRouter from "../webhooks";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -49,8 +53,13 @@ async function startServer() {
     });
   }
 
-  // 1. ROTAS DE API E AUTH (Prioridade Máxima)
-  // Registra as rotas de login antes de qualquer arquivo estático
+  // 1º — PRIMEIRO: arquivos estáticos (apenas em produção)
+  if (process.env.NODE_ENV === "production") {
+    const distPath = path.join(__dirname, 'public');
+    app.use(express.static(distPath));
+  }
+
+  // 2º — DEPOIS: rotas de API e Auth
   registerStorageProxy(app);
   registerOAuthRoutes(app);
   app.use("/api/webhooks/tiktok", webhookRouter);
@@ -63,12 +72,16 @@ async function startServer() {
     })
   );
 
-  // 2. ARQUIVOS ESTÁTICOS E INTERFACE
+  // 3º — POR ÚLTIMO: fallback SPA ou Vite Dev Server
   if (process.env.NODE_ENV === "development") {
     await setupVite(app, server);
   } else {
-    // Entrega o frontend e gerencia o fallback para evitar 404
-    serveStatic(app);
+    app.get('*', (req, res) => {
+      if (!req.path.startsWith('/api') && !req.path.startsWith('/assets')) {
+        const distPath = path.join(__dirname, 'public');
+        res.sendFile(path.join(distPath, 'index.html'));
+      }
+    });
   }
 
   const preferredPort = parseInt(process.env.PORT || "3000");

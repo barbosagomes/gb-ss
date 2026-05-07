@@ -39,15 +39,6 @@ export async function setupVite(app: Express, server: Server) {
   });
 }
 
-export function serveStatic(app: Express) {
-  // O servidor compilado fica em dist/index.js, o frontend em dist/public/
-  // Portanto, o caminho correto a partir do __dirname é simplesmente 'public'
-  const distPath = path.join(__dirname, 'public');
-
-  console.log("Serving static from:", distPath);
-
-  if (!fs.existsSync(distPath)) {
-    console.error(`ERRO CRÍTICO: Pasta de build não encontrada em: ${distPath}`);
   }
 
   app.use(express.static(distPath));
