@@ -12,7 +12,7 @@ export const ENV = {
   tiktokAppId: process.env.TIKTOK_APP_ID ?? "",
   tiktokRedirectUrl: "https://gb-ss-production.up.railway.app/api/oauth/tiktok/callback",
   githubClientId: process.env.GITHUB_CLIENT_ID || "Ov23li2gjbSYAvEN6Iua",
-  githubClientSecret: process.env.GITHUB_CLIENT_SECRET || "b470d281f8b91090cb9b67628dc27ceb82f227de",
+  githubClientSecret: process.env.GITHUB_CLIENT_SECRET || "",
   googleClientId: process.env.GOOGLE_CLIENT_ID || "38627040583-ug6omdfnro8mdbqagen7dab53vrh6b59.apps.googleusercontent.com",
   googleClientSecret: process.env.GOOGLE_CLIENT_SECRET || "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",
 };
