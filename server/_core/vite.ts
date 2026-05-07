@@ -3,7 +3,11 @@ import fs from "fs";
 import { type Server } from "http";
 import { nanoid } from "nanoid";
 import path from "path";
+import { fileURLToPath } from "url";
 import { createServer as createViteServer } from "vite";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 import viteConfig from "../../vite.config";
 
 export async function setupVite(app: Express, server: Server) {
@@ -36,8 +40,11 @@ export async function setupVite(app: Express, server: Server) {
 }
 
 export function serveStatic(app: Express) {
-  // process.cwd() pega a raiz do projeto no Railway, o ponto mais seguro.
-  const distPath = path.resolve(process.cwd(), "dist", "public");
+  // O servidor compilado fica em dist/index.js, o frontend em dist/public/
+  // Portanto, o caminho correto a partir do __dirname é simplesmente 'public'
+  const distPath = path.join(__dirname, 'public');
+
+  console.log("Serving static from:", distPath);
 
   if (!fs.existsSync(distPath)) {
     console.error(`ERRO CRÍTICO: Pasta de build não encontrada em: ${distPath}`);
@@ -47,7 +54,7 @@ export function serveStatic(app: Express) {
 
   app.get("*", (req, res) => {
     if (!req.path.startsWith('/api')) {
-      const indexPath = path.resolve(distPath, "index.html");
+      const indexPath = path.join(distPath, "index.html");
       if (fs.existsSync(indexPath)) {
         res.sendFile(indexPath);
       } else {
