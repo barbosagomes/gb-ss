@@ -11,8 +11,8 @@ export const ENV = {
   tiktokAppSecret: process.env.TIKTOK_APP_SECRET ?? "",
   tiktokAppId: process.env.TIKTOK_APP_ID ?? "",
   tiktokRedirectUrl: process.env.TIKTOK_REDIRECT_URL ?? "",
-  githubClientId: process.env.GITHUB_CLIENT_ID ?? "Ov23li2gjbSYAvEN6Iua",
-  githubClientSecret: process.env.GITHUB_CLIENT_SECRET ?? "4909b6c2671af0b4299e0c6d994ec586cb0c44f0",
-  googleClientId: process.env.GOOGLE_CLIENT_ID ?? "38627040583-ug6omdfnro8mdbqagen7dab53vrh6b59.apps.googleusercontent.com",
-  googleClientSecret: process.env.GOOGLE_CLIENT_SECRET ?? "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",
+  githubClientId: process.env.GITHUB_CLIENT_ID || "",
+  githubClientSecret: process.env.GITHUB_CLIENT_SECRET || "",
+  googleClientId: process.env.GOOGLE_CLIENT_ID || "",
+  googleClientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
 };
