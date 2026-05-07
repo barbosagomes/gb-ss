@@ -21,9 +21,10 @@ async function handleGitHubCallback(req: Request, res: Response) {
   }
 
   try {
-    console.log("[OAuth GitHub] Received code and state");
-    console.log("[OAuth GitHub] GITHUB_CLIENT_ID:", process.env.GITHUB_CLIENT_ID);
-    console.log("[OAuth GitHub] GITHUB_CLIENT_SECRET:", process.env.GITHUB_CLIENT_SECRET ? "***" : "NOT SET");
+    console.log("[OAuth GitHub] Received code:", code);
+    console.log("[OAuth GitHub] State:", state);
+    console.log("[OAuth GitHub] Using ENV.githubClientId:", ENV.githubClientId);
+    console.log("[OAuth GitHub] Using ENV.githubClientSecret:", ENV.githubClientSecret ? "***" : "NOT SET");
     
     // Decode state to get redirect URL
     const redirectUrl = Buffer.from(state, "base64").toString("utf-8");
@@ -42,10 +43,12 @@ async function handleGitHubCallback(req: Request, res: Response) {
       }
     );
 
-    console.log("[OAuth GitHub] Token response:", tokenResponse.data);
+    console.log("[OAuth GitHub] Token response status:", tokenResponse.status);
+    console.log("[OAuth GitHub] Token response data:", tokenResponse.data);
     
     if (tokenResponse.data.error) {
-      throw new Error(tokenResponse.data.error_description);
+      console.error("[OAuth GitHub] Error from GitHub:", tokenResponse.data.error, tokenResponse.data.error_description);
+      throw new Error(`GitHub OAuth error: ${tokenResponse.data.error_description}`);
     }
 
     // Get user info
@@ -150,8 +153,12 @@ async function handleGoogleCallback(req: Request, res: Response) {
 
     res.redirect(302, redirectUrl || "/");
   } catch (error) {
-    console.error("[OAuth Google] Callback failed", error);
-    res.status(500).json({ error: "OAuth callback failed" });
+    console.error("[OAuth GitHub] Callback failed:", error instanceof Error ? error.message : String(error));
+    if (error instanceof Error && error.message.includes("404")) {
+      res.status(404).json({ error: "GitHub OAuth endpoint not found", details: error.message });
+    } else {
+      res.status(500).json({ error: "OAuth callback failed", details: error instanceof Error ? error.message : String(error) });
+    }
   }
 }
 
