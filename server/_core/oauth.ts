@@ -85,11 +85,16 @@ async function handleGitHubCallback(req: Request, res: Response) {
     });
 
     const cookieOptions = getSessionCookieOptions(req);
+    
+    console.log("SESSION AFTER LOGIN:", { openId, name: userResponse.data.name });
+    console.log("COOKIE OPTIONS:", cookieOptions);
+
     res.cookie(COOKIE_NAME, sessionToken, {
       ...cookieOptions,
       maxAge: ONE_YEAR_MS,
     });
 
+    console.log("COOKIE HEADER SENT:", res.getHeader('set-cookie'));
     res.redirect(302, redirectUrl || "/");
   } catch (error) {
     console.error("[OAuth GitHub] Callback failed", error);
@@ -143,11 +148,16 @@ async function handleGoogleCallback(req: Request, res: Response) {
     });
 
     const cookieOptions = getSessionCookieOptions(req);
+    
+    console.log("SESSION AFTER LOGIN:", { openId, name: userResponse.data.name });
+    console.log("COOKIE OPTIONS:", cookieOptions);
+
     res.cookie(COOKIE_NAME, sessionToken, {
       ...cookieOptions,
       maxAge: ONE_YEAR_MS,
     });
 
+    console.log("COOKIE HEADER SENT:", res.getHeader('set-cookie'));
     res.redirect(302, redirectUrl || "/");
   } catch (error) {
     console.error("[OAuth Google] Callback failed", error);
