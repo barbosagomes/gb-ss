@@ -10,7 +10,7 @@ import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
 import webhookRouter from "../webhooks";
-process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0"; // Apenas para teste, se o problema for SSL
+
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
     const server = net.createServer();
@@ -38,6 +38,7 @@ async function startServer() {
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
   // 1. ROTAS DE API E AUTH (Prioridade Máxima)
+  // Registra as rotas de login antes de qualquer arquivo estático
   registerStorageProxy(app);
   registerOAuthRoutes(app);
   app.use("/api/webhooks/tiktok", webhookRouter);
@@ -54,7 +55,7 @@ async function startServer() {
   if (process.env.NODE_ENV === "development") {
     await setupVite(app, server);
   } else {
-    // Aqui garantimos que o serveStatic não "atropele" as rotas de API
+    // Entrega o frontend e gerencia o fallback para evitar 404
     serveStatic(app);
   }
 
