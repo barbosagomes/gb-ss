@@ -1,15 +1,15 @@
 # Build stage
-FROM node:20 AS builder
+FROM node:20-slim AS builder
 
 WORKDIR /app
 
-# Install pnpm
+# Install pnpm globally
 RUN npm install -g pnpm@10.4.1
 
 # Copy package files
 COPY package.json pnpm-lock.yaml ./
 
-# Install dependencies with pnpm
+# Install dependencies
 RUN pnpm install --frozen-lockfile
 
 # Copy source code
@@ -19,11 +19,11 @@ COPY . .
 RUN pnpm run build
 
 # Production stage
-FROM node:20-alpine
+FROM node:20-slim
 
 WORKDIR /app
 
-# Install pnpm in production image
+# Install pnpm
 RUN npm install -g pnpm@10.4.1
 
 # Copy package files
