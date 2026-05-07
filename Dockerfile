@@ -18,7 +18,7 @@ RUN pnpm install --frozen-lockfile
 # Copy all source files
 COPY . .
 
-# Build the application
+# Build the application (Vite + esbuild)
 RUN pnpm run build
 
 # Production stage
@@ -26,17 +26,8 @@ FROM node:20-slim
 
 WORKDIR /app
 
-# Install pnpm
-RUN npm install -g pnpm@10.4.1
-
-# Copy package files from builder
-COPY --from=builder /app/package.json /app/pnpm-lock.yaml ./
-
-# Install production dependencies only
-RUN pnpm install --frozen-lockfile --prod
-
 # Copy built application from builder
-COPY --from=builder /app/server ./server
+COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/client/dist ./client/dist
 COPY --from=builder /app/start.sh ./start.sh
 
