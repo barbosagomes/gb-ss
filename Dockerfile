@@ -1,12 +1,12 @@
 # Build stage
-FROM node:20-alpine AS builder
+FROM node:20 AS builder
 
 WORKDIR /app
 
-# Instalar pnpm
-RUN npm install -g pnpm
+# Instalar pnpm globalmente
+RUN npm install -g pnpm@10.4.1
 
-# Copiar package.json, pnpm-lock.yaml e .npmrc
+# Copiar package.json, pnpm-lock.yaml
 COPY package.json pnpm-lock.yaml ./
 
 # Instalar dependências
@@ -24,7 +24,7 @@ FROM node:20-alpine
 WORKDIR /app
 
 # Instalar pnpm
-RUN npm install -g pnpm
+RUN npm install -g pnpm@10.4.1
 
 # Copiar package.json e pnpm-lock.yaml
 COPY package.json pnpm-lock.yaml ./
