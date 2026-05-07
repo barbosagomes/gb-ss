@@ -60,18 +60,18 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       <div
         className={`${
           sidebarOpen ? "w-64" : "w-20"
-        } bg-gradient-to-b from-slate-900 to-slate-800 text-white transition-all duration-300 flex flex-col shadow-lg`}
+        } bg-white border-r border-gray-200 text-gray-900 transition-all duration-300 flex flex-col shadow-sm`}
       >
         {/* Logo */}
-        <div className="flex items-center justify-between p-6 border-b border-slate-700">
+        <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <div className={`flex items-center gap-3 ${!sidebarOpen && "justify-center w-full"}`}>
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-blue-600 rounded-lg flex items-center justify-center font-bold text-white text-sm">
+            <div className="w-10 h-10 bg-gradient-to-br from-pink-500 to-rose-600 rounded-lg flex items-center justify-center font-bold text-white text-sm">
               TK
             </div>
             {sidebarOpen && (
               <div>
-                <div className="font-bold text-lg">TikTok</div>
-                <div className="text-xs text-slate-400">Stock Sync</div>
+                <div className="font-bold text-lg text-gray-900">TikTok</div>
+                <div className="text-xs text-gray-600">Stock Sync</div>
               </div>
             )}
           </div>
@@ -83,7 +83,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             <button
               key={item.href}
               onClick={() => navigate(item.href)}
-              className="w-full flex items-center gap-4 px-4 py-3 rounded-lg text-slate-300 hover:bg-slate-700 hover:text-white transition-colors duration-200 group"
+              className="w-full flex items-center gap-4 px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition-colors duration-200 group"
               title={item.label}
             >
               <item.icon className="w-5 h-5 flex-shrink-0" />
@@ -95,10 +95,8 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         </nav>
 
         {/* User Section */}
-        <div className="border-t border-slate-700 p-4 space-y-3">
-          <div className={`flex items-center gap-3 ${!sidebarOpen && "justify-center"}`}>
-            <div className="w-10 h-10 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center font-bold text-white text-sm flex-shrink-0">
-              {user.name?.charAt(0).toUpperCase() || "U"}
+        <div className="border-t border-gray-200 p-4 space-y-3">
+          <div className={`flex items-center gap-3 ${!sidebarOpen && "justify-center"            <div className="w-10 h-10 bg-gradient-to-br from-pink-400 to-rose-500 rounded-full flex items-center justify-center font-bold text-white text-sm flex-shrink-0"></div>              {user.name?.charAt(0).toUpperCase() || "U"}
             </div>
             {sidebarOpen && (
               <div className="flex-1 min-w-0">

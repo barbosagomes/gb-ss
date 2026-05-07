@@ -23,6 +23,56 @@ export const appRouter = router({
   financial: financialRouter,
 
   tiktok: router({
+    // Get all products
+    getProducts: protectedProcedure
+      .query(async ({ ctx }) => {
+        // Mock data - em produção, isso viria da API do TikTok Shop
+        const mockProducts = [
+          {
+            id: "prod_1",
+            name: "Camiseta Premium",
+            skuCount: 3,
+            totalStock: 150,
+            price: 79.9,
+            image: "https://via.placeholder.com/100",
+          },
+          {
+            id: "prod_2",
+            name: "Calça Jeans",
+            skuCount: 5,
+            totalStock: 85,
+            price: 129.9,
+            image: "https://via.placeholder.com/100",
+          },
+          {
+            id: "prod_3",
+            name: "Jaqueta Inverno",
+            skuCount: 2,
+            totalStock: 45,
+            price: 199.9,
+            image: "https://via.placeholder.com/100",
+          },
+          {
+            id: "prod_4",
+            name: "Tênis Esportivo",
+            skuCount: 4,
+            totalStock: 200,
+            price: 249.9,
+            image: "https://via.placeholder.com/100",
+          },
+          {
+            id: "prod_5",
+            name: "Bolsa Casual",
+            skuCount: 1,
+            totalStock: 8,
+            price: 89.9,
+            image: "https://via.placeholder.com/100",
+          },
+        ];
+
+        return mockProducts;
+      }),
+
     // Get or create TikTok app configuration
     getAppConfig: protectedProcedure.query(async ({ ctx }) => {
       const config = await dbTiktok.getTiktokAppByUserId(ctx.user.id);
