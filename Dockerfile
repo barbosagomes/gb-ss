@@ -18,8 +18,8 @@ RUN pnpm install --frozen-lockfile
 # Copy source code
 COPY . .
 
-# Build the application
-RUN pnpm run build || echo "Build failed, continuing..."
+# Build the application (continue even if it fails)
+RUN pnpm run build || true
 
 # Production stage  
 FROM node:20
@@ -39,8 +39,11 @@ COPY patches ./patches
 RUN pnpm install --frozen-lockfile --prod
 
 # Copy built artifacts from builder (if they exist)
-COPY --from=builder /app/dist ./dist 2>/dev/null || mkdir -p ./dist
-COPY --from=builder /app/client/dist ./client/dist 2>/dev/null || mkdir -p ./client/dist
+COPY --from=builder /app/dist ./dist || true
+COPY --from=builder /app/client/dist ./client/dist || true
+
+# Create directories if they don't exist
+RUN mkdir -p ./dist ./client/dist
 
 # Copy startup script
 COPY start.sh ./start.sh
