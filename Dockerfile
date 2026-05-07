@@ -1,9 +1,9 @@
 # Build stage
-FROM node:20-slim AS builder
+FROM node:20
 
 WORKDIR /app
 
-# Install pnpm globally
+# Install pnpm
 RUN npm install -g pnpm@10.4.1
 
 # Copy package files
@@ -18,8 +18,8 @@ COPY . .
 # Build the application
 RUN pnpm run build
 
-# Production stage
-FROM node:20-slim
+# Production stage  
+FROM node:20
 
 WORKDIR /app
 
