@@ -50,20 +50,24 @@ async function startServer() {
   // development mode uses Vite, production mode uses static files
   if (process.env.NODE_ENV === "development") {
     await setupVite(app, server);
+// development mode uses Vite, production mode uses static files
+  if (process.env.NODE_ENV === "development") {
+    await setupVite(app, server);
   } else {
     serveStatic(app);
+    
+    // ADICIONE ESTAS LINHAS AQUI PARA CORRIGIR O 404:
+    import path from "path";
+    app.get("*", (req, res) => {
+      // Verifica se não é uma rota de API antes de mandar o index
+      if (!req.path.startsWith('/api')) {
+        res.sendFile(path.resolve("dist/client/index.html"));
+      }
+    });
   }
 
   const preferredPort = parseInt(process.env.PORT || "3000");
   const port = await findAvailablePort(preferredPort);
-
-  if (port !== preferredPort) {
-    console.log(`Port ${preferredPort} is busy, using port ${port} instead`);
-  }
-
-  server.listen(port, () => {
-    console.log(`Server running on http://localhost:${port}/`);
-  });
-}
+  // ... resto do código
 
 startServer().catch(console.error);
