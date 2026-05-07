@@ -20,8 +20,13 @@ async function handleGitHubCallback(req: Request, res: Response) {
   }
 
   try {
+    console.log("[OAuth GitHub] Received code and state");
+    console.log("[OAuth GitHub] GITHUB_CLIENT_ID:", process.env.GITHUB_CLIENT_ID);
+    console.log("[OAuth GitHub] GITHUB_CLIENT_SECRET:", process.env.GITHUB_CLIENT_SECRET ? "***" : "NOT SET");
+    
     // Decode state to get redirect URL
     const redirectUrl = Buffer.from(state, "base64").toString("utf-8");
+    console.log("[OAuth GitHub] Redirect URL:", redirectUrl);
 
     // Exchange code for token
     const tokenResponse = await axios.post(
@@ -36,6 +41,8 @@ async function handleGitHubCallback(req: Request, res: Response) {
       }
     );
 
+    console.log("[OAuth GitHub] Token response:", tokenResponse.data);
+    
     if (tokenResponse.data.error) {
       throw new Error(tokenResponse.data.error_description);
     }
@@ -57,6 +64,7 @@ async function handleGitHubCallback(req: Request, res: Response) {
     )?.email;
 
     const openId = `github_${userResponse.data.id}`;
+    console.log("[OAuth GitHub] User ID:", openId);
 
     await db.upsertUser({
       openId,
@@ -80,7 +88,8 @@ async function handleGitHubCallback(req: Request, res: Response) {
     res.redirect(302, redirectUrl || "/");
   } catch (error) {
     console.error("[OAuth GitHub] Callback failed", error);
-    res.status(500).json({ error: "OAuth callback failed" });
+    console.error("[OAuth GitHub] Error details:", error instanceof Error ? error.message : error);
+    res.status(500).json({ error: "OAuth callback failed", details: error instanceof Error ? error.message : "Unknown error" });
   }
 }
 
