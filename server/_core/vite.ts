@@ -38,19 +38,3 @@ export async function setupVite(app: Express, server: Server) {
     }
   });
 }
-
-  }
-
-  app.use(express.static(distPath));
-
-  app.get("*", (req, res) => {
-    if (!req.path.startsWith('/api')) {
-      const indexPath = path.join(distPath, "index.html");
-      if (fs.existsSync(indexPath)) {
-        res.sendFile(indexPath);
-      } else {
-        res.status(404).send("O arquivo index.html não foi encontrado no build.");
-      }
-    }
-  });
-}
