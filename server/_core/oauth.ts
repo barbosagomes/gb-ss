@@ -212,14 +212,18 @@ export function registerOAuthRoutes(app: Express) {
   app.get("/api/oauth/github", (req, res) => {
     // Hardcode total para evitar qualquer erro de redirecionamento HTTP
     const redirectUri = GITHUB_REDIRECT_URI;
-    const state = Buffer.from(redirectUri).toString("base64");
+    // O state deve conter a URL para onde redirecionar APÓS o login (ex: /)
+    const postLoginRedirect = "/";
+    const state = Buffer.from(postLoginRedirect).toString("base64");
     const url = `https://github.com/login/oauth/authorize?client_id=${ENV.githubClientId}&redirect_uri=${encodeURIComponent(redirectUri)}&state=${state}&scope=user:email`;
     res.redirect(url);
   });
 
   app.get("/api/oauth/google", (req, res) => {
     const redirectUri = `https://${req.get("host")}/api/oauth/google/callback`;
-    const state = Buffer.from(redirectUri).toString("base64");
+    // O state deve conter a URL para onde redirecionar APÓS o login (ex: /)
+    const postLoginRedirect = "/";
+    const state = Buffer.from(postLoginRedirect).toString("base64");
     const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${ENV.googleClientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=openid%20profile%20email&state=${state}`;
     res.redirect(url);
   });
