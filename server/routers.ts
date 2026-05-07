@@ -179,11 +179,7 @@ export const appRouter = router({
       };
     }),
 
-    // Get products
-    getProducts: protectedProcedure.query(async ({ ctx }) => {
-      const products = await dbTiktok.getProductsByUserId(ctx.user.id);
-      return products;
-    }),
+
 
     // Get SKUs for a product
     getSkus: protectedProcedure
