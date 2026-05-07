@@ -86,7 +86,7 @@ async function handleGitHubCallback(req: Request, res: Response) {
 
     const cookieOptions = getSessionCookieOptions(req);
     
-    console.log("SESSION AFTER LOGIN:", { openId, name: userResponse.data.name });
+    console.log("SESSION AFTER LOGIN:", { openId, name: userResponse.data.name || userResponse.data.login });
     console.log("COOKIE OPTIONS:", cookieOptions);
 
     res.cookie(COOKIE_NAME, sessionToken, {
@@ -149,7 +149,7 @@ async function handleGoogleCallback(req: Request, res: Response) {
 
     const cookieOptions = getSessionCookieOptions(req);
     
-    console.log("SESSION AFTER LOGIN:", { openId, name: userResponse.data.name });
+    console.log("SESSION AFTER LOGIN:", { openId, name: userResponse.data.name || userResponse.data.login });
     console.log("COOKIE OPTIONS:", cookieOptions);
 
     res.cookie(COOKIE_NAME, sessionToken, {
