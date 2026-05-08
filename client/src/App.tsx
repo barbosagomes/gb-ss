@@ -11,9 +11,11 @@ import Products from "./pages/Products";
 import Analytics from "./pages/Analytics";
 import SyncLogs from "./pages/SyncLogs";
 import Alerts from "./pages/Alerts";
+import Terms from "./pages/Terms";
+import Privacy from "./pages/Privacy";
+import Support from "./pages/Support";
 
 function Router() {
-  // make sure to consider if you need authentication for certain routes
   return (
     <Switch>
       <Route path="/login" component={Login} />
@@ -23,25 +25,19 @@ function Router() {
       <Route path="/analytics" component={Analytics} />
       <Route path="/sync-logs" component={SyncLogs} />
       <Route path="/alerts" component={Alerts} />
+      <Route path="/terms" component={Terms} />
+      <Route path="/privacy" component={Privacy} />
+      <Route path="/support" component={Support} />
       <Route path="/404" component={NotFound} />
-      {/* Final fallback route */}
       <Route component={NotFound} />
     </Switch>
   );
 }
 
-// NOTE: About Theme
-// - First choose a default theme according to your design style (dark or light bg), than change color palette in index.css
-//   to keep consistent foreground/background color across components
-// - If you want to make theme switchable, pass `switchable` ThemeProvider and use `useTheme` hook
-
 function App() {
   return (
     <ErrorBoundary>
-      <ThemeProvider
-        defaultTheme="light"
-        // switchable
-      >
+      <ThemeProvider defaultTheme="light">
         <TooltipProvider>
           <Toaster />
           <Router />

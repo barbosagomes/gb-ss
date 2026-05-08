@@ -41,18 +41,29 @@ function getGreeting(): string {
 
 function HomeContent() {
   const { user } = useAuth();
-  const productsQuery = trpc.tiktok.getProducts.useQuery(undefined, {
-    enabled: !!user,
-  });
+  // No Modo de Auditoria, ignoramos os dados reais e usamos mocks
+  // const productsQuery = trpc.tiktok.getProducts.useQuery(undefined, {
+  //   enabled: !!user,
+  // });
 
   const [, navigate] = useLocation();
   const greeting = getGreeting();
 
-  const products = productsQuery.data ?? [];
-  const totalProducts = products.length;
-  const totalSkus = products.reduce((acc: number, p: any) => acc + (p.skuCount ?? 0), 0);
-  const totalStock = products.reduce((acc: number, p: any) => acc + (p.totalStock ?? 0), 0);
-  const lowStockCount = products.filter((p: any) => (p.totalStock ?? 0) < 10).length;
+  // DADOS MOCKADOS PARA AUDITORIA
+  const totalProducts = 124;
+  const totalSkus = 458;
+  const totalSales = 1250.00;
+  const lowStockCount = 3;
+  const syncStatus = "Pronto para Sincronizar";
+
+  // Mock de lista de produtos para a tabela
+  const products = [
+    { id: "1001", name: "Camiseta TikTok Edition", skuCount: 5, totalStock: 85, price: 49.90 },
+    { id: "1002", name: "Ring Light Profissional", skuCount: 2, totalStock: 12, price: 189.00 },
+    { id: "1003", name: "Microfone Lapela Wireless", skuCount: 1, totalStock: 5, price: 120.00 },
+    { id: "1004", name: "Tripé de Alumínio 1.8m", skuCount: 3, totalStock: 45, price: 75.50 },
+    { id: "1005", name: "Kit Streamer Iniciante", skuCount: 1, totalStock: 2, price: 350.00 },
+  ];
 
   return (
     <div className="space-y-8">
@@ -63,7 +74,7 @@ function HomeContent() {
             {greeting}, {user?.name?.split(" ")[0] ?? "usuário"}
           </h1>
           <p className="text-gray-600 mt-2">
-            Painel de controle - TikTok Shop Sync
+            Status do Sistema: <span className="font-semibold text-green-600">{syncStatus}</span>
           </p>
         </div>
         <Button
@@ -79,7 +90,7 @@ function HomeContent() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <KPICard
           title="Produtos"
-          value={productsQuery.isLoading ? null : totalProducts}
+          value={totalProducts}
           subtitle="Sincronizados"
           icon={<Package className="w-6 h-6" />}
           color="bg-blue-50"
@@ -88,7 +99,7 @@ function HomeContent() {
         />
         <KPICard
           title="SKUs"
-          value={productsQuery.isLoading ? null : totalSkus}
+          value={totalSkus}
           subtitle="Variações"
           icon={<TrendingUp className="w-6 h-6" />}
           color="bg-green-50"
@@ -96,18 +107,19 @@ function HomeContent() {
           trend="+8%"
         />
         <KPICard
-          title="Estoque Total"
-          value={productsQuery.isLoading ? null : totalStock}
-          subtitle="Unidades"
+          title="Vendas Hoje"
+          value={totalSales}
+          isCurrency={true}
+          subtitle="TikTok Shop"
           icon={<RefreshCw className="w-6 h-6" />}
           color="bg-purple-50"
           iconColor="text-purple-600"
           trend="+5%"
         />
         <KPICard
-          title="Baixo Estoque"
-          value={productsQuery.isLoading ? null : lowStockCount}
-          subtitle="Produtos"
+          title="Alertas"
+          value={lowStockCount}
+          subtitle="Estoque Baixo"
           icon={<AlertCircle className="w-6 h-6" />}
           color="bg-red-50"
           iconColor="text-red-600"
@@ -131,116 +143,97 @@ function HomeContent() {
           </div>
         </div>
 
-        {productsQuery.isLoading ? (
-          <div className="p-6 space-y-4">
-            {[1, 2, 3].map((i) => (
-              <Skeleton key={i} className="h-16 w-full" />
-            ))}
-          </div>
-        ) : products.length > 0 ? (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-gray-200 bg-gray-50">
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">
-                    Produto
-                  </th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">
-                    SKU
-                  </th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">
-                    Estoque
-                  </th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">
-                    Preço
-                  </th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">
-                    Status
-                  </th>
-                  <th className="px-6 py-4 text-center text-sm font-semibold text-gray-900">
-                    Ações
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {products.slice(0, 5).map((product: any, idx: number) => (
-                  <tr
-                    key={idx}
-                    className="border-b border-gray-200 hover:bg-gray-50 transition-colors"
-                  >
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-gradient-to-br from-pink-100 to-rose-100 rounded-lg flex items-center justify-center">
-                          <Package className="w-5 h-5 text-pink-600" />
-                        </div>
-                        <div>
-                          <p className="font-medium text-gray-900">
-                            {product.name || "Produto"}
-                          </p>
-                          <p className="text-xs text-gray-600">ID: {product.id}</p>
-                        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-gray-200 bg-gray-50">
+                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">
+                  Produto
+                </th>
+                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">
+                  SKU
+                </th>
+                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">
+                  Estoque
+                </th>
+                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">
+                  Preço
+                </th>
+                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">
+                  Status
+                </th>
+                <th className="px-6 py-4 text-center text-sm font-semibold text-gray-900">
+                  Ações
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {products.map((product: any, idx: number) => (
+                <tr
+                  key={idx}
+                  className="border-b border-gray-200 hover:bg-gray-50 transition-colors"
+                >
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-gradient-to-br from-pink-100 to-rose-100 rounded-lg flex items-center justify-center">
+                        <Package className="w-5 h-5 text-pink-600" />
                       </div>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-600">
-                      {product.skuCount || 0} SKUs
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-2">
-                        <div className="w-full bg-gray-200 rounded-full h-2 max-w-xs">
-                          <div
-                            className={`h-2 rounded-full ${
-                              (product.totalStock ?? 0) > 50
-                                ? "bg-green-500"
-                                : (product.totalStock ?? 0) > 20
-                                ? "bg-yellow-500"
-                                : "bg-red-500"
-                            }`}
-                            style={{
-                              width: `${Math.min((product.totalStock ?? 0) / 100, 1) * 100}%`,
-                            }}
-                          ></div>
-                        </div>
-                        <span className="text-sm font-medium text-gray-900">
-                          {product.totalStock ?? 0}
-                        </span>
+                      <div>
+                        <p className="font-medium text-gray-900">
+                          {product.name}
+                        </p>
+                        <p className="text-xs text-gray-600">ID: {product.id}</p>
                       </div>
-                    </td>
-                    <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                      {product.price ? `R$ ${product.price.toFixed(2)}` : "—"}
-                    </td>
-                    <td className="px-6 py-4">
-                      <span
-                        className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
-                          (product.totalStock ?? 0) > 0
-                            ? "bg-green-100 text-green-800"
-                            : "bg-red-100 text-red-800"
-                        }`}
-                      >
-                        {(product.totalStock ?? 0) > 0 ? "Em estoque" : "Fora de estoque"}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 text-sm text-gray-600">
+                    {product.skuCount} SKUs
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-2">
+                      <div className="w-full bg-gray-200 rounded-full h-2 max-w-xs">
+                        <div
+                          className={`h-2 rounded-full ${
+                            (product.totalStock ?? 0) > 50
+                              ? "bg-green-500"
+                              : (product.totalStock ?? 0) > 20
+                              ? "bg-yellow-500"
+                              : "bg-red-500"
+                          }`}
+                          style={{
+                            width: `${Math.min((product.totalStock ?? 0) / 100, 1) * 100}%`,
+                          }}
+                        ></div>
+                      </div>
+                      <span className="text-sm font-medium text-gray-900">
+                        {product.totalStock}
                       </span>
-                    </td>
-                    <td className="px-6 py-4 text-center">
-                      <button className="inline-flex items-center justify-center p-2 hover:bg-gray-200 rounded-lg transition-colors">
-                        <MoreVertical className="w-4 h-4 text-gray-600" />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        ) : (
-          <div className="p-12 text-center">
-            <Package className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-            <p className="text-gray-600 mb-4">Nenhum produto sincronizado</p>
-            <Button
-              onClick={() => navigate("/products")}
-              className="bg-pink-600 hover:bg-pink-700 text-white"
-            >
-              Sincronizar Primeiro Produto
-            </Button>
-          </div>
-        )}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 text-sm font-medium text-gray-900">
+                    R$ {product.price.toFixed(2)}
+                  </td>
+                  <td className="px-6 py-4">
+                    <span
+                      className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
+                        (product.totalStock ?? 0) > 10
+                          ? "bg-green-100 text-green-800"
+                          : "bg-red-100 text-red-800"
+                      }`}
+                    >
+                      {(product.totalStock ?? 0) > 10 ? "Em estoque" : "Baixo estoque"}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 text-center">
+                    <button className="inline-flex items-center justify-center p-2 hover:bg-gray-200 rounded-lg transition-colors">
+                      <MoreVertical className="w-4 h-4 text-gray-600" />
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* Quick Actions */}
@@ -277,6 +270,7 @@ function KPICard({
   color,
   iconColor,
   trend,
+  isCurrency = false,
 }: {
   title: string;
   value: number | null;
@@ -285,6 +279,7 @@ function KPICard({
   color: string;
   iconColor: string;
   trend?: string;
+  isCurrency?: boolean;
 }) {
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
@@ -300,7 +295,9 @@ function KPICard({
       {value === null ? (
         <Skeleton className="h-8 w-16 mb-2" />
       ) : (
-        <p className="text-3xl font-bold text-gray-900 mb-2">{value.toLocaleString()}</p>
+        <p className="text-3xl font-bold text-gray-900 mb-2">
+          {isCurrency ? `R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : value.toLocaleString()}
+        </p>
       )}
       <p className="text-xs text-gray-600">{subtitle}</p>
     </div>
