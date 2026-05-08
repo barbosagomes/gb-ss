@@ -1886,131 +1886,23 @@ async function createContext(opts) {
 }
 
 // server/_core/vite.ts
-import fs2 from "fs";
+import fs from "fs";
 import { nanoid } from "nanoid";
 import path2 from "path";
 import { fileURLToPath } from "url";
 import { createServer as createViteServer } from "vite";
 
 // vite.config.ts
-import { jsxLocPlugin } from "@builder.io/vite-plugin-jsx-loc";
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
-import fs from "node:fs";
 import path from "node:path";
 import { defineConfig } from "vite";
-import { vitePluginManusRuntime } from "vite-plugin-manus-runtime";
-var PROJECT_ROOT = import.meta.dirname;
-var LOG_DIR = path.join(PROJECT_ROOT, ".manus-logs");
-var MAX_LOG_SIZE_BYTES = 1 * 1024 * 1024;
-var TRIM_TARGET_BYTES = Math.floor(MAX_LOG_SIZE_BYTES * 0.6);
-function ensureLogDir() {
-  if (!fs.existsSync(LOG_DIR)) {
-    fs.mkdirSync(LOG_DIR, { recursive: true });
-  }
-}
-function trimLogFile(logPath, maxSize) {
-  try {
-    if (!fs.existsSync(logPath) || fs.statSync(logPath).size <= maxSize) {
-      return;
-    }
-    const lines = fs.readFileSync(logPath, "utf-8").split("\n");
-    const keptLines = [];
-    let keptBytes = 0;
-    const targetSize = TRIM_TARGET_BYTES;
-    for (let i = lines.length - 1; i >= 0; i--) {
-      const lineBytes = Buffer.byteLength(`${lines[i]}
-`, "utf-8");
-      if (keptBytes + lineBytes > targetSize) break;
-      keptLines.unshift(lines[i]);
-      keptBytes += lineBytes;
-    }
-    fs.writeFileSync(logPath, keptLines.join("\n"), "utf-8");
-  } catch {
-  }
-}
-function writeToLogFile(source, entries) {
-  if (entries.length === 0) return;
-  ensureLogDir();
-  const logPath = path.join(LOG_DIR, `${source}.log`);
-  const lines = entries.map((entry) => {
-    const ts = (/* @__PURE__ */ new Date()).toISOString();
-    return `[${ts}] ${JSON.stringify(entry)}`;
-  });
-  fs.appendFileSync(logPath, `${lines.join("\n")}
-`, "utf-8");
-  trimLogFile(logPath, MAX_LOG_SIZE_BYTES);
-}
-function vitePluginManusDebugCollector() {
-  return {
-    name: "manus-debug-collector",
-    transformIndexHtml(html) {
-      if (process.env.NODE_ENV === "production") {
-        return html;
-      }
-      return {
-        html,
-        tags: [
-          {
-            tag: "script",
-            attrs: {
-              src: "/__manus__/debug-collector.js",
-              defer: true
-            },
-            injectTo: "head"
-          }
-        ]
-      };
-    },
-    configureServer(server) {
-      server.middlewares.use("/__manus__/logs", (req, res, next) => {
-        if (req.method !== "POST") {
-          return next();
-        }
-        const handlePayload = (payload) => {
-          if (payload.consoleLogs?.length > 0) {
-            writeToLogFile("browserConsole", payload.consoleLogs);
-          }
-          if (payload.networkRequests?.length > 0) {
-            writeToLogFile("networkRequests", payload.networkRequests);
-          }
-          if (payload.sessionEvents?.length > 0) {
-            writeToLogFile("sessionReplay", payload.sessionEvents);
-          }
-          res.writeHead(200, { "Content-Type": "application/json" });
-          res.end(JSON.stringify({ success: true }));
-        };
-        const reqBody = req.body;
-        if (reqBody && typeof reqBody === "object") {
-          try {
-            handlePayload(reqBody);
-          } catch (e) {
-            res.writeHead(400, { "Content-Type": "application/json" });
-            res.end(JSON.stringify({ success: false, error: String(e) }));
-          }
-          return;
-        }
-        let body = "";
-        req.on("data", (chunk) => {
-          body += chunk.toString();
-        });
-        req.on("end", () => {
-          try {
-            const payload = JSON.parse(body);
-            handlePayload(payload);
-          } catch (e) {
-            res.writeHead(400, { "Content-Type": "application/json" });
-            res.end(JSON.stringify({ success: false, error: String(e) }));
-          }
-        });
-      });
-    }
-  };
-}
-var plugins = [react(), tailwindcss(), jsxLocPlugin(), vitePluginManusRuntime(), vitePluginManusDebugCollector()];
 var vite_config_default = defineConfig({
   base: "/",
-  plugins,
+  plugins: [
+    react(),
+    tailwindcss()
+  ],
   resolve: {
     alias: {
       "@": path.resolve(import.meta.dirname, "client", "src"),
@@ -2028,18 +1920,10 @@ var vite_config_default = defineConfig({
   server: {
     host: true,
     allowedHosts: [
-      ".manuspre.computer",
-      ".manus.computer",
-      ".manus-asia.computer",
-      ".manuscomputer.ai",
-      ".manusvm.computer",
+      ".up.railway.app",
       "localhost",
       "127.0.0.1"
-    ],
-    fs: {
-      strict: true,
-      deny: ["**/.*"]
-    }
+    ]
   }
 });
 
@@ -2062,7 +1946,7 @@ async function setupVite(app, server) {
   app.use("*", async (req, res, next) => {
     try {
       const clientTemplate = path2.resolve(process.cwd(), "client", "index.html");
-      let template = await fs2.promises.readFile(clientTemplate, "utf-8");
+      let template = await fs.promises.readFile(clientTemplate, "utf-8");
       template = template.replace(`src="/src/main.tsx"`, `src="/src/main.tsx?v=${nanoid()}"`);
       const page = await vite.transformIndexHtml(req.originalUrl, template);
       res.status(200).set({ "Content-Type": "text/html" }).end(page);
@@ -2157,9 +2041,7 @@ function isPortAvailable(port) {
 }
 async function findAvailablePort(startPort = 3e3) {
   for (let port = startPort; port < startPort + 20; port++) {
-    if (await isPortAvailable(port)) {
-      return port;
-    }
+    if (await isPortAvailable(port)) return port;
   }
   throw new Error(`No available port found starting from ${startPort}`);
 }
@@ -2179,32 +2061,37 @@ async function startServer() {
   }
   if (process.env.NODE_ENV === "production") {
     const distPath = path3.join(__dirname2, "public");
-    app.use(express.static(distPath));
+    app.use(express.static(distPath, {
+      // Cache longo para assets com hash no nome
+      setHeaders(res, filePath) {
+        if (/\.(js|css|woff2?|ttf|svg|png|jpg|ico)$/.test(filePath)) {
+          res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+        }
+      }
+    }));
   }
   registerStorageProxy(app);
   registerOAuthRoutes(app);
   app.use("/api/webhooks/tiktok", webhooks_default);
   app.use(
     "/api/trpc",
-    createExpressMiddleware({
-      router: appRouter,
-      createContext
-    })
+    createExpressMiddleware({ router: appRouter, createContext })
   );
   if (process.env.NODE_ENV === "development") {
     await setupVite(app, server);
   } else {
-    app.get("*", (req, res) => {
-      if (!req.path.startsWith("/api") && !req.path.startsWith("/assets")) {
-        const distPath = path3.join(__dirname2, "public");
-        res.sendFile(path3.join(distPath, "index.html"));
-      }
+    app.get("*", (req, res, next) => {
+      if (req.path.startsWith("/api")) return next();
+      const distPath = path3.join(__dirname2, "public");
+      res.sendFile(path3.join(distPath, "index.html"), (err) => {
+        if (err) next(err);
+      });
     });
   }
   const preferredPort = parseInt(process.env.PORT || "3000");
   const port = await findAvailablePort(preferredPort);
   server.listen(port, () => {
-    console.log(`Server running on http://localhost:${port}/`);
+    console.log(`\u2705 Server running on http://localhost:${port}/`);
   });
 }
 startServer().catch(console.error);
